@@ -24,6 +24,10 @@ Options
 
 The *[options]* section accepts the following settings:
 
+*auto_resize* = <true|false>::
+	Automatically resize the imv window to the dimensions of each image.
+	Defaults to 'false'.
+
 *background* = <hex-code|'checks'>::
 	Set the background in imv. Can either be a 6-digit hexadecimal colour code,
 	or 'checks' for a chequered background. Defaults to '000000'

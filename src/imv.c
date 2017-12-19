@@ -62,6 +62,7 @@ struct imv {
   bool loop_input;
   bool list_files_at_exit;
   bool paths_from_stdin;
+  bool auto_resize;
   enum scaling_mode scaling_mode;
   enum background_type background_type;
   struct { unsigned char r, g, b; } background_color;
@@ -161,6 +162,7 @@ struct imv *imv_create(void)
   imv->loop_input = true;
   imv->list_files_at_exit = false;
   imv->paths_from_stdin = false;
+  imv->auto_resize = false;
   imv->background_color.r = imv->background_color.g = imv->background_color.b = 0;
   imv->slideshow_image_duration = 0;
   imv->slideshow_time_elapsed = 0;
@@ -386,7 +388,7 @@ bool imv_parse_args(struct imv *imv, int argc, char **argv)
 
   int o;
 
-  while((o = getopt(argc, argv, "frdxhlu:s:n:b:t:")) != -1) {
+  while((o = getopt(argc, argv, "frdxhlwu:s:n:b:t:")) != -1) {
     switch(o) {
       case 'f': imv->fullscreen = true;                          break;
       case 'r': imv->recursive_load = true;                      break;
@@ -394,6 +396,7 @@ bool imv_parse_args(struct imv *imv, int argc, char **argv)
       case 'x': imv->loop_input = false;                         break;
       case 'l': imv->list_files_at_exit = true;                  break;
       case 'n': imv->starting_path = optarg;                     break;
+      case 'w': imv->auto_resize = true;                         break;
       case 'h':
         fprintf(stdout,
         "imv %s\n"
@@ -736,6 +739,12 @@ static void handle_event(struct imv *imv, SDL_Event *event)
     imv->need_redraw = true;
     imv->need_rescale |= event->user.code;
     imv->loading = false;
+
+    /* if auto-resize is enabled, now's the time */
+    if(!imv->fullscreen && imv->need_rescale && imv->auto_resize) {
+      SDL_SetWindowSize(imv->window, imv->current_image.width,
+                        imv->current_image.height);
+    }
     return;
   } else if(event->type == imv->events.BAD_IMAGE) {
     /* an image failed to load, remove it from our image list */
@@ -1007,6 +1016,11 @@ static int handle_ini_value(void *user, const char *section, const char *name,
 
     if(!strcmp(name, "list_files_at_exit")) {
       imv->list_files_at_exit = parse_bool(value);
+      return 1;
+    }
+
+    if(!strcmp(name, "auto_resize")) {
+      imv->auto_resize = parse_bool(value);
       return 1;
     }
 
